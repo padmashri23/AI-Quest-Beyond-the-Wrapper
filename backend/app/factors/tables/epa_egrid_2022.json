@@ -1,0 +1,15 @@
+{
+  "table_id": "EPA_EGRID2022",
+  "source": "US EPA eGRID2022 Summary Tables (released January 2024)",
+  "url": "https://www.epa.gov/egrid/summary-data",
+  "notes": "Total output emission rates converted from lb/MWh to kg/kWh using 0.45359237 kg/lb / 1000. CO2e uses AR5 GWPs as published in the EPA GHG Emission Factors Hub (2024). Transcribed subset; re-verify against the current eGRID release before production filing.",
+  "rows": [
+    {"factor_id": "EPA_EGRID2022_US", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "US", "year": 2022, "value": "0.3733", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, U.S. total output emission rate, CO2e 823.1 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_CAMX", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "CAMX", "year": 2022, "value": "0.2257", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, WECC California (CAMX) CO2e 497.6 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_ERCT", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "ERCT", "year": 2022, "value": "0.3499", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, ERCOT All (ERCT) CO2e 771.3 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_NYUP", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "NYUP", "year": 2022, "value": "0.1164", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, NPCC Upstate NY (NYUP) CO2e 256.6 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_RFCW", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "RFCW", "year": 2022, "value": "0.4541", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, RFC West (RFCW) CO2e 1001.1 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_SRSO", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "SRSO", "year": 2022, "value": "0.3966", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, SERC South (SRSO) CO2e 874.4 lb/MWh"},
+    {"factor_id": "EPA_EGRID2022_NWPP", "activity_type": "electricity_grid", "scope": 2, "scope2_method": "location", "region": "NWPP", "year": 2022, "value": "0.2894", "unit": "kWh", "source": "EPA eGRID2022", "table_ref": "Table 1, WECC Northwest (NWPP) CO2e 638.1 lb/MWh"}
+  ]
+}

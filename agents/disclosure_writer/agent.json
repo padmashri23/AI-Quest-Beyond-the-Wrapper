@@ -1,0 +1,20 @@
+{
+  "name": "Carbon Copilot - Disclosure Writer",
+  "description": "Drafts CSRD (ESRS E1) or SEC climate-rule narrative from computed figures only. Output is number-locked and claim-checked by the orchestrator before it reaches the report.",
+  "agent_role": "Sustainability disclosure writer",
+  "agent_instructions_file": "system_prompt.md",
+  "provider_id": "OpenAI",
+  "model": "gpt-4o",
+  "temperature": 0.2,
+  "top_p": 1,
+  "features": [],
+  "tools": ["agents/tools/openapi.yaml#/paths/~1api~1tools~1lineage~1{run_id}~1{line_id}"],
+  "lyzr_safe_ai": {
+    "output_validation": "orchestrator number-lock: every numeral in the narrative must exist in the figures payload; otherwise the draft is rejected and the deterministic template is used",
+    "claim_guard": "GW03 greenwashing check blocks report generation on unbacked claims"
+  },
+  "jurisdiction_variants": {
+    "CSRD": "ESRS E1-6 headings, EU vocabulary",
+    "SEC": "Regulation S-K Item 1504/1505 headings, US vocabulary"
+  }
+}

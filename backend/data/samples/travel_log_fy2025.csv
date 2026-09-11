@@ -1,0 +1,13 @@
+Trip Date,Traveller,Route,Mode,Class,Distance km,Passengers,Country,Amount,Currency
+2025-01-14,Amara Okafor,LHR-SFO return,Flight long-haul,Economy,17240,1,GB,1420.00,GBP
+2025-01-14,Daniel Reyes,LHR-SFO return,Flight long-haul,Economy,17240,1,GB,1420.00,GBP
+2025-02-03,Priya Nair,MAN-AMS return,Flight short-haul,Economy,980,1,GB,210.00,GBP
+2025-02-18,Tom Whitaker,SFO-DFW return,Flight medium-haul,Economy,4680,1,US,410.00,USD
+2025-03-06,Amara Okafor,Sheffield-London St Pancras return,Rail,Standard,540,1,GB,96.00,GBP
+2025-03-06,Priya Nair,Sheffield-London St Pancras return,Rail,Standard,540,1,GB,96.00,GBP
+2025-03-11,Daniel Reyes,Fremont-Sacramento return,Hire car,Mid-size,290,1,US,145.00,USD
+2025-03-11,Daniel Reyes,Sacramento 2 nights,Hotel,Standard,,1,US,380.00,USD
+2025-03-20,Lena Fischer,FRA-MAN return,Flight short-haul,Economy,1560,1,GB,260.00,GBP
+2025-03-20,Lena Fischer,Manchester 3 nights,Hotel,Standard,,1,GB,495.00,GBP
+2025-03-24,Tom Whitaker,DFW-FRA return,Flight long-haul,Business,16460,1,US,3900.00,USD
+2025-03-27,Priya Nair,Sheffield-Leeds return,Taxi,Standard,124,1,GB,88.00,GBP

@@ -1,0 +1,8 @@
+Date,Carrier,Lane,Mode,Weight tonnes,Distance km,Country,Amount,Currency
+2025-01-09,XPO Logistics,Rotterdam-Sheffield,Road freight HGV,22.4,610,GB,2850.00,GBP
+2025-01-23,XPO Logistics,Rotterdam-Sheffield,Road freight HGV,21.8,610,GB,2850.00,GBP
+2025-02-06,DB Cargo,Duisburg-Sheffield,Rail freight,48.0,890,GB,4100.00,GBP
+2025-02-14,Schneider National,Fremont-Dallas,Trucking FTL,18.2,2760,US,5200.00,USD
+2025-02-27,Maersk,Shanghai-Felixstowe,Sea freight container,96.0,19800,GB,14800.00,USD
+2025-03-05,J.B. Hunt,Dallas-Fremont,Trucking LTL,6.4,2760,US,2100.00,USD
+2025-03-19,Lufthansa Cargo,Frankfurt-Chicago,Air freight,1.2,7000,US,9400.00,USD

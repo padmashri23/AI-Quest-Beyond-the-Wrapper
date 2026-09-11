@@ -1,0 +1,41 @@
+Date,Vendor,Description,GL Code,Quantity,Unit,Country,Amount,Currency
+2025-01-15,Pacific Gas & Electric,Electricity supply - Fremont plant Jan (acct 88231-0042),6100,184200,kWh,CAMX,31314.00,USD
+2025-02-14,Pacific Gas & Electric,Electricity supply - Fremont plant Feb,6100,176900,kWh,CAMX,30073.00,USD
+2025-03-15,Pacific Gas & Electric,Electricity supply - Fremont plant Mar,6100,190450,kWh,CAMX,32376.50,USD
+2025-01-20,Octopus Energy Business,Electricity supply - Sheffield site Q1 (meter no. E1Z04477),6100,412.6,MWh,GB,98200.00,GBP
+2025-04-20,Octopus Energy Business,Electricity supply - Sheffield site Q2,6100,388.1,MWh,GB,91400.00,GBP
+2025-01-31,Oncor / TXU,Electricity supply - Dallas DC Jan,6100,96500,kWh,ERCT,11580.00,USD
+2025-02-28,Oncor / TXU,Electricity supply - Dallas DC Feb,6100,91200,kWh,ERCT,10944.00,USD
+2025-01-25,British Gas Business,Natural gas - Sheffield boilers Jan-Mar,6110,286400,kWh,GB,19048.00,GBP
+2025-04-25,British Gas Business,Natural gas - Sheffield boilers Apr-Jun,6110,142700,kWh,GB,9490.00,GBP
+2025-02-10,PG&E Gas,Natural gas - Fremont heat treat furnace,6110,4820,therms,US,7230.00,USD
+2025-03-10,PG&E Gas,Natural gas - Fremont heat treat furnace,6110,5110,therms,US,7665.00,USD
+2025-01-12,Shell Fleet Solutions,Fleet fuel card - diesel HGVs Jan,6200,9860,litres,GB,14790.00,GBP
+2025-02-12,Shell Fleet Solutions,Fleet fuel card - diesel HGVs Feb,6200,10240,litres,GB,15360.00,GBP
+2025-03-12,Shell Fleet Solutions,Fleet fuel card - diesel HGVs Mar,6200,9425,litres,GB,14137.50,GBP
+2025-02-05,WEX Inc,Fleet fuel card - diesel service vans US,6200,2140,gallons,US,7490.00,USD
+2025-02-05,WEX Inc,Fleet fuel card - unleaded gasoline pool cars,6210,860,gallons,US,2924.00,USD
+2025-03-18,Aggreko,Backup generator diesel - Sheffield outage test,,1250,litres,GB,1875.00,GBP
+2025-03-02,Calor Gas,Forklift LPG cylinders (propane) Q1,,3400,litres,GB,2720.00,GBP
+2025-01-30,Thames Water Business,Water supply - Sheffield site Q1,6120,2140,m3,GB,4066.00,GBP
+2025-01-30,Thames Water Business,Trade effluent / wastewater - Sheffield Q1,6120,1710,m3,GB,3420.00,GBP
+2025-02-28,Biffa,General waste to landfill - Feb,6400,18.4,tonnes,GB,3312.00,GBP
+2025-02-28,Biffa,Mixed recycling collection - Feb,6410,11.2,tonnes,GB,896.00,GBP
+2025-03-31,Waste Management Inc,Landfill service - Fremont plant Q1,6400,42,short_ton,US,5460.00,USD
+2025-01-08,Steel Dynamics,Hot rolled steel coil - grade S355 (PO 44821),,,,US,148200.00,USD
+2025-02-08,Steel Dynamics,Hot rolled steel coil - grade S355 (PO 45102),,,,US,152600.00,USD
+2025-01-22,Dell Technologies,Laptop refresh - 40 x Latitude 5550 (contact j.parker@dell.com),,,,US,52000.00,USD
+2025-03-05,Lyreco,Office supplies and paper - Q1 consolidated,,,,GB,6400.00,GBP
+2025-02-20,Deloitte LLP,Advisory services - CSRD readiness phase 1,,,,GB,48000.00,GBP
+2025-01-01,Landsec,Office rent - Sheffield Q1,7000,,,GB,84000.00,GBP
+2025-01-31,ADP,Payroll processing fee Jan,7100,,,GB,1200.00,GBP
+2025-02-15,Hiscox,Business insurance premium,7100,,,GB,17800.00,GBP
+2025-03-01,Salesforce,SaaS subscription - CRM annual,7100,,,US,36000.00,USD
+2025-02-11,DHL Freight,Inbound logistics - pallet delivery Rotterdam-Sheffield,5100,64200,tonne_km,GB,11800.00,GBP
+2025-03-14,Maersk,Sea freight - 4 x 40ft containers Shanghai-Felixstowe,5110,3860000,tonne_km,GB,9200.00,USD
+2025-03-22,FedEx Express,Air freight - urgent tooling Fremont-Sheffield,5120,17400,tonne_km,GB,21500.00,USD
+2025-03-28,Marriott Sheffield,Hotel - visiting auditors 3 rooms 4 nights,6310,12,nights,GB,1560.00,GBP
+2025-02-19,Site Services Contractor,Site services contract - batch 44 (mixed),,,,GB,22150.00,GBP
+2025-03-09,Northern Tooling,Consumables and misc procurement Q1,,,,GB,9800.00,GBP
+2025-03-30,Regional Airport Parking,Long-stay parking Mar,,,,GB,420.00,GBP
+2025-02-27,Kinetic Cooling,Refrigerant top-up R410A - HVAC Fremont,,3.2,kg,US,640.00,USD

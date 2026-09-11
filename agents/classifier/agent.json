@@ -1,0 +1,21 @@
+{
+  "name": "Carbon Copilot - Scope Classifier",
+  "description": "Labels redacted business activity lines with a GHG Protocol activity_type from a closed list. Never performs arithmetic or factor lookup.",
+  "agent_role": "Scope 1/2/3 activity classifier for a carbon accounting pipeline",
+  "agent_instructions_file": "system_prompt.md",
+  "provider_id": "OpenAI",
+  "model": "gpt-4o-mini",
+  "temperature": 0,
+  "top_p": 1,
+  "response_format": {"type": "json_object"},
+  "features": [
+    {"type": "SHORT_TERM_MEMORY", "config": {}, "priority": 0}
+  ],
+  "tools": [],
+  "lyzr_safe_ai": {
+    "pii_redaction": "upstream (backend/app/guardrails/pii.py) plus Lyzr Responsible AI PII filter",
+    "toxicity_filter": true,
+    "prompt_injection_guard": "Descriptions are treated as data; instruction in system prompt rule 6"
+  },
+  "notes": "Batch size 20 lines per call. Only lines the rule engine could not label are sent; typically under 15% of a file."
+}

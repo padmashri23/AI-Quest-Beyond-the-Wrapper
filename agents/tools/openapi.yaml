@@ -1,0 +1,104 @@
+openapi: 3.0.3
+info:
+  title: Carbon Copilot deterministic tools
+  version: 1.0.0
+  description: >
+    Tools exposed by backend/ for Lyzr agents. Every numeric answer in the system comes
+    from one of these endpoints, never from a model completion. Register this file as a
+    tool in Lyzr Agent Studio (Tools -> OpenAPI) and attach to the agents.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/tools/match_factor:
+    post:
+      operationId: match_factor
+      summary: Resolve an activity to one official EPA/DEFRA emission factor row with citation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activity_type]
+              properties:
+                activity_type: {type: string, example: electricity_grid}
+                region: {type: string, example: CAMX, description: ISO country or eGRID subregion}
+                year: {type: integer, example: 2025}
+      responses:
+        "200":
+          description: FactorMatch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matched: {type: boolean}
+                  match_quality: {type: string, enum: [exact, region_fallback, year_fallback, global_fallback, none]}
+                  factor:
+                    type: object
+                    properties:
+                      factor_id: {type: string}
+                      value: {type: string, description: kg CO2e per unit, as a decimal string}
+                      unit: {type: string}
+                      source: {type: string}
+                      table_ref: {type: string}
+                  reason: {type: string}
+  /api/tools/calculate:
+    post:
+      operationId: calculate_emissions
+      summary: Deterministic quantity x factor with unit conversion; returns formula and operands.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity, unit, activity_type]
+              properties:
+                quantity: {type: string, example: "1250.5", description: Decimal string}
+                unit: {type: string, example: kWh}
+                activity_type: {type: string, example: electricity_grid}
+                region: {type: string, example: US}
+                year: {type: integer, example: 2025}
+      responses:
+        "200":
+          description: Calculation with lineage
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kg_co2e: {type: string}
+                  t_co2e: {type: string}
+                  formula: {type: string}
+                  factor: {type: object}
+                  conversion: {type: object, nullable: true}
+  /api/tools/lineage/{run_id}/{line_id}:
+    get:
+      operationId: get_lineage
+      summary: Full audit lineage for one ledger line (source row -> classification -> factor -> calculation).
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema: {type: string}
+        - in: path
+          name: line_id
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: LedgerEntry
+          content:
+            application/json:
+              schema: {type: object}
+  /api/tools/units:
+    get:
+      operationId: list_units
+      summary: Known units, dimensions and conversion constants with sources.
+      responses:
+        "200":
+          description: Unit table
+          content:
+            application/json:
+              schema: {type: object}
