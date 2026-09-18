@@ -4,6 +4,8 @@ A single-workspace ESG accounting and disclosure-preparation application. Import
 
 **This is not a certified filing system.** It does not submit to EDGAR, provide assurance, establish legal applicability, or cover every CSRD/ESRS or CSDDD requirement. See [deployment and release gates](docs/DEPLOYMENT.md).
 
+For the hackathon, start with the [five-minute demo and judging checklist](docs/DEMO.md). Hosting and a legal reviewer are not prerequisites for a synthetic-data demonstration.
+
 ## Start locally
 
 From the repository root, install backend dependencies and build the dashboard:
@@ -45,7 +47,8 @@ The container runs as a non-root user and includes Tesseract OCR. Configure prod
 | Audit | Encrypted payloads/evidence; append-only revision/artifact tables; HMAC-signed hash-chain events; source downloads recorded; independently retainable checkpoints. |
 | Export | Approval-gated ZIP containing reviewed Markdown, inventory, evidence, approval, market-based accounting, audit events/chain and signed file-hash manifest. Not regulator-ready XBRL/iXBRL. |
 | Scenarios | Assumption-based reduction levers, Decimal avoided emissions, NPV, ROI and payback. Multi-lever API sorts by ROI; dashboard creates individual-lever scenarios. Projections never alter actual totals. |
-| Suppliers | Prepare requests, download unsent email drafts, attach responses and record assessment. No external email is sent automatically. |
+| Suppliers | Preview requests, approve the exact recipient/message as administrator or reviewer, then download an unsent email draft. Changed content invalidates approval. Attach responses and record assessment; email delivery is disabled. |
+| Operations | Encrypted consistent backups, signed external checkpoints, verified non-overwriting restore/drill commands, revoked restored sessions, readiness checks and bounded request telemetry. A separate HTTPS deployment manifest and CI workflow are prepared. |
 | Access/UI | Administrator, analyst, reviewer and read-only auditor roles; expiring HttpOnly cookie sessions, CSRF checks, explicit origins, sanitized Markdown; responsive overview, ledger, review queue, disclosures, scenarios, suppliers, factors and audit/governance screens. |
 
 ## Lyzr handoff
@@ -85,9 +88,14 @@ The original 2023/2024 transcribed subsets remain available for historic reprodu
 .\backend\.venv\Scripts\python.exe -m pytest backend/tests -q
 npm --prefix frontend run build
 npm --prefix frontend run lint
+npm --prefix frontend audit --omit=dev --audit-level=high
 ```
 
+For the backend advisory check, install `pip-audit==2.10.1` in a development environment and run `python -m pip_audit -r backend/requirements.txt --progress-spinner off` with the backend virtual environment. The CI workflow repeats this check. A clean advisory scan is not a security certification or penetration test.
+
 Backend tests cover historical golden values, current official factors, finite-number refusals, full Excel sheet lineage, OCR success/failure handling, authentication/roles/CSRF, encrypted append-only records, missing-record tamper detection, migration, review conflicts, Scope 2 allocation, scenarios, supplier drafts and approval/export invalidation.
+
+Additional tests exercise malformed/non-finite agent labels, duplicate-label refusal, supplier approval and stale-content rejection, secret-file configuration, private telemetry, tampered/older backup rejection and recovery without touching live data. Hosted Lyzr configuration and billed token costs are not established by offline tests.
 
 OCR tests mock the OCR engine output; they do not establish recognition accuracy across real supplier scans. Test databases/keys are isolated from the existing workspace. Browser QA has exercised desktop/mobile navigation and the major data-entry workflows using the real local API.
 

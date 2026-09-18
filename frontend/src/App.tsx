@@ -115,7 +115,6 @@ export default function App() {
   useEffect(() => {
     if (!user) return;
     let active = true;
-    setLoadingInventory(true);
     Promise.all([request<RunSummary[]>("/runs"), request<Catalog>("/factors")])
       .then(async ([list, c]) => {
         if (!active) return;
@@ -174,6 +173,7 @@ export default function App() {
       await request("/auth/logout", { method: "POST" });
       session(null);
       setUser(null);
+      setLoadingInventory(true);
       setRun(null);
       setWorkspace(null);
       setCatalog(null);
@@ -335,7 +335,9 @@ export default function App() {
             ) : page === "Factor library" ? (
               <FactorPanel catalog={catalog} />
             ) : loadingInventory ? (
-              <div className="empty" role="status">Loading your inventories…</div>
+              <div className="empty" role="status">
+                Loading your inventories…
+              </div>
             ) : !run || !workspace ? (
               <section className="welcome panel">
                 <Icon />
