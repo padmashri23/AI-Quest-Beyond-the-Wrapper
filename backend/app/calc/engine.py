@@ -8,7 +8,7 @@ Calculation carries every operand so the audit trail can reproduce the figure by
 """
 from __future__ import annotations
 
-from decimal import ROUND_HALF_EVEN, Decimal, getcontext
+from decimal import ROUND_HALF_EVEN, Decimal, getcontext, localcontext
 
 from ..schemas import Calculation, FactorRow
 from .units import convert, normalise_unit
@@ -26,8 +26,21 @@ GWP = {
 
 
 def calculate(quantity: Decimal, unit: str, factor: FactorRow) -> Calculation:
+    # Context must be local: FastAPI calculation workers have independent contexts.
+    with localcontext() as context:
+        context.prec = 60
+        if not factor.value.is_finite() or factor.value < 0:
+            raise ValueError('Factor must be finite and non-negative')
+        if factor.components and any(not v.is_finite() or v < 0 for v in factor.components.values()):
+            raise ValueError('Gas components must be finite and non-negative')
+        return _calculate(quantity, unit, factor)
+
+
+def _calculate(quantity: Decimal, unit: str, factor: FactorRow) -> Calculation:
     if quantity is None:
         raise ValueError("quantity is required")
+    if not quantity.is_finite() or quantity < 0 or quantity > Decimal('1e18'):
+        raise ValueError("Quantity must be finite, non-negative and no greater than 1e18; corrections require a reviewed revision")
     unit_norm = normalise_unit(unit)
     if unit_norm is None:
         raise ValueError(f"Unknown unit '{unit}'")

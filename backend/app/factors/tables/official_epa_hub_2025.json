@@ -1,0 +1,29 @@
+{
+  "table_id": "EPA_HUB2025_VERIFIED",
+  "file": "epa_hub_2025.pdf",
+  "url": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf",
+  "sha256": "5d07c678fae6783623acb1e23faa4a7c46268ee6c5a0654c9e49c50de7caf924",
+  "rows": [
+    {
+      "factor_id": "EPA_HUB2025_NATGAS",
+      "activity_type": "natural_gas_stationary",
+      "scope": 1,
+      "region": "US",
+      "year": 2025,
+      "value": "53.1145",
+      "components": {
+        "CO2": "53.06",
+        "CH4": "0.001",
+        "N2O": "0.0001"
+      },
+      "gwp_set": "AR5-100",
+      "unit": "mmBtu",
+      "source": "EPA GHG Emission Factors Hub 2025",
+      "table_ref": "Table 1, Natural Gas; kg CO2 and grams CH4/N2O per mmBtu",
+      "url": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf",
+      "source_sha256": "5d07c678fae6783623acb1e23faa4a7c46268ee6c5a0654c9e49c50de7caf924",
+      "source_row": "PDF page 1, Table 1 Natural Gas",
+      "verified": true
+    }
+  ]
+}

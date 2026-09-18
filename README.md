@@ -1,147 +1,100 @@
-# Carbon Copilot — Autonomous ESG & Carbon Accounting Compliance Copilot
+# Carbon Copilot — evidence-led carbon accounting
 
-**AI Quest: Beyond the Wrapper · Problem 04 · ClimateTech / FinTech Compliance**
+A single-workspace ESG accounting and disclosure-preparation application. Import activity evidence, classify Scope 1/2/3, calculate with Decimal tools, resolve review findings and export an independently approved evidence package.
 
-Ingests invoices, utility bills, freight and travel logs and ERP exports; classifies every
-line into GHG Protocol Scope 1 / 2 / 3; binds it to an official EPA eGRID / EPA GHG Hub /
-DEFRA emission factor; does the arithmetic in code (never in a model); runs greenwashing
-checks; and emits a CSRD (ESRS E1) or SEC (Reg S-K Item 1504) disclosure where every tonne
-traces back to the source row, the factor citation and the formula.
+**This is not a certified filing system.** It does not submit to EDGAR, provide assurance, establish legal applicability, or cover every CSRD/ESRS or CSDDD requirement. See [deployment and release gates](docs/DEPLOYMENT.md).
 
-```
-ingest -> redact PII -> rules classify -> [residue] -> Lyzr Scope Classifier
-                                                         | validated labels only
-                                     match_factor (tool) -> calculate (tool) -> SQLite ledger
-                                                         |
-                  greenwashing checks -> [figures] -> Lyzr Disclosure Writer -> number-lock -> report
-```
+## Start locally
 
-## Quick start
+From the repository root, install backend dependencies and build the dashboard:
 
-### Docker (one command)
-
-```bash
-cp .env.example .env            # optional: add your Lyzr key + agent IDs
-docker compose up --build
-# open http://localhost:8000  -> click "Run bundled sample dataset"
-```
-
-### Local
-
-```bash
-# backend
+```powershell
+.\backend\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
+npm --prefix frontend ci
+npm --prefix frontend run build
 cd backend
-python -m venv .venv && .venv/Scripts/activate   # or source .venv/bin/activate
-pip install -r requirements.txt
-pytest -q                                        # 19 golden + contract tests
-uvicorn app.main:app --reload --port 8000
-
-# frontend (second terminal)
-cd frontend
-npm install
-npm run dev                                      # http://localhost:5173, proxies /api to :8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Without a `LYZR_API_KEY` the system runs in **rules-only fallback**: every figure is
-identical, the residue of lines the rules cannot label is shown as "needs review", and the
-narrative comes from a deterministic template. With a key and the two agent IDs the same
-run sends the residue to the Scope Classifier and drafts the narrative with the Disclosure
-Writer.
+If the virtual environment does not exist, create it first with `python -m venv backend/.venv`. On macOS/Linux use `backend/.venv/bin/python`.
 
-### Creating the Lyzr agents
+Open http://127.0.0.1:8000. Create the first administrator on the local setup screen, then import activities or choose **Explore sample inventory**. No default production password is provided.
 
-1. In [Lyzr Agent Studio](https://studio.lyzr.ai) create two agents using the system prompts in
-   `agents/classifier/system_prompt.md` and `agents/disclosure_writer/system_prompt.md`
-   (settings in the sibling `agent.json`: classifier temperature 0, JSON output), or run
-   `python agents/deploy_agents.py` with `LYZR_API_KEY` set.
-2. Register `agents/tools/openapi.yaml` as an OpenAPI tool (point the server URL at your
-   backend) and attach it to the Disclosure Writer so it can pull lineage on demand.
-3. Put the agent IDs in `.env` as `LYZR_CLASSIFIER_AGENT_ID` / `LYZR_WRITER_AGENT_ID`.
+For frontend development, use `npm --prefix frontend run dev`; Vite proxies the API to port 8000.
 
-## Repository layout
+### Docker
 
-```
-agents/                      Lyzr agent definitions, prompts, tool schemas, orchestrator
-  classifier/                Scope Classifier agent (closed-list labels, JSON only)
-  disclosure_writer/         Disclosure Writer agent (CSRD / SEC narrative, number-locked)
-  tools/openapi.yaml         Deterministic tool contract exposed by the backend
-  orchestrator.py            Handoff, batching, label validation, number-lock, governance log
-  lyzr_client.py             POST /v3/inference/chat/ client
-  deploy_agents.py           Creates the agents from the JSON configs
-backend/                     FastAPI service
-  app/ingestion/             CSV/Excel (pandas) and PDF (pdfplumber) parsers -> LineItem
-  app/guardrails/pii.py      Redaction of prices, account numbers, emails, phones, names
-  app/classify/rules.py      Ordered rule engine; only the residue goes to the agent
-  app/factors/tables/*.json  EPA eGRID2022, EPA GHG Hub 2024, DEFRA 2023 (with citations)
-  app/factors/matcher.py     Exact-key lookup with region/year fallback; never guesses
-  app/calc/units.py          Unit conversion constants with sources (NIST, EIA, EPA)
-  app/calc/engine.py         python.decimal arithmetic, per-gas GWP folding, formula string
-  app/guardrails/greenwashing.py  GW01-GW12 checks (blocking + warning)
-  app/ledger/db.py           SQLite audit ledger (runs, entries, agent log, narratives)
-  app/reports/render.py      ESRS E1 / SEC markdown with citations, governance log, lineage
-  app/main.py                API + tool endpoints + static frontend
-  tests/                     Golden calculations and orchestrator contract tests
-  data/samples/              Synthetic FY2025 dataset for a fictional UK/US manufacturer
-frontend/                    React + Vite dashboard (overview, ledger, lineage drawer, findings, report, log)
-Dockerfile, docker-compose.yml, .env.example
+```sh
+docker compose up --build -d
+docker compose exec copilot python -m app.admin create-admin --username administrator
 ```
 
-## How the design answers the rubric
+The container runs as a non-root user and includes Tesseract OCR. Configure production secrets, HTTPS and origins before exposing it. The Docker image has not been deployment-tested in this environment.
 
-| Pillar | Where to look |
+## Implemented workflows
+
+| Area | Behaviour |
 |---|---|
-| **Lyzr architecture & tool calling (30)** | `agents/orchestrator.py` is the only place agents and tools meet. The classifier returns labels from a closed list (anything else is rejected); the writer's draft is *number-locked* (every numeral must exist in the figures payload or the draft is discarded and logged). Tools are published as OpenAPI (`agents/tools/openapi.yaml`) and served at `/api/tools/*`. The Governance log tab shows every handoff with token and latency estimates. |
-| **Emission calculation accuracy (30)** | `backend/app/calc/engine.py` uses `decimal` with a 28-digit context, folds per-gas factors with AR5 GWPs, and refuses cross-dimension conversions (litres to kWh raises). Factor tables carry source, table reference and year. `pytest` re-derives hand-computed goldens (e.g. 100 therms US gas = 531.145 kg CO2e). Utility PDFs that duplicate ERP postings are counted once (GW11). |
-| **Auditability & traceability (20)** | Click any ledger row: source file and row/page, redacted raw text, redaction kinds, classification rule or agent decision with confidence, factor row and citation, conversion constant with source, and the full formula. The report's Appendix A prints the same for every line; Appendix B lists every gap with the reason no estimate was produced. |
-| **Sustainability dashboard UX (20)** | CSO view: scope tiles, scope / category / activity charts, findings that need attention, report status. Auditor view: filterable ledger, lineage drawer, governance log, one-click CSRD or SEC markdown. |
+| Ingestion | CSV, every Excel sheet, text PDF, optional Tesseract OCR. Unreadable pages become explicit review items. Original bytes are retained encrypted and SHA-256 linked to activities. |
+| Accounting | Scope categorization, exact activity/region/year matching, Decimal unit conversion and per-gas GWP calculations. No future-year factors; fallback selections need review. |
+| Official factors | Direct imports of supported non-null aggregate CO₂e rows from DESNZ 2025/2026 workbooks, eGRID 2023 revision 2 subregions/US, and EPA Hub 2025 stationary natural gas. More than 5,000 imported rows, each with publication hash and source row. |
+| Human review | Correct quantities, units, periods, activities, category and factor selections; confirm or exclude with rationale and retained evidence. Optimistic locking prevents stale inventory edits. |
+| Greenwashing controls | Missing provenance, unsupported climate claims, accounting gaps and unresolved review requirements block final approval/export on the server. Potential duplicate invoices need human adjudication. |
+| Scope 2 | Separate location-based accounting and evidence-backed market-based instrument/residual-mix allocations, coverage checks, over-allocation prevention and audited revocation. |
+| Disclosures | Versioned CSRD/SEC reference profiles; 12 evidence-backed preparation sections; independent reviewer sign-off bound to a content digest. Changes invalidate approval. |
+| Audit | Encrypted payloads/evidence; append-only revision/artifact tables; HMAC-signed hash-chain events; source downloads recorded; independently retainable checkpoints. |
+| Export | Approval-gated ZIP containing reviewed Markdown, inventory, evidence, approval, market-based accounting, audit events/chain and signed file-hash manifest. Not regulator-ready XBRL/iXBRL. |
+| Scenarios | Assumption-based reduction levers, Decimal avoided emissions, NPV, ROI and payback. Multi-lever API sorts by ROI; dashboard creates individual-lever scenarios. Projections never alter actual totals. |
+| Suppliers | Prepare requests, download unsent email drafts, attach responses and record assessment. No external email is sent automatically. |
+| Access/UI | Administrator, analyst, reviewer and read-only auditor roles; expiring HttpOnly cookie sessions, CSRF checks, explicit origins, sanitized Markdown; responsive overview, ledger, review queue, disclosures, scenarios, suppliers, factors and audit/governance screens. |
 
-### Quest checkpoints
+## Lyzr handoff
 
-- **Hallucination mitigation** — no number originates in a model; unknown activity keys and unbacked claims are rejected, not corrected.
-- **Groundedness** — every figure cites a factor row; unmatched lines become data gaps, never estimates.
-- **Retrieval quality** — factor "retrieval" is an exact dictionary lookup on a canonical key with an explicit fallback chain, so there is no semantic drift.
-- **Cost & tokens** — rules label ~90% of lines; only the residue is batched (20 per call) to the classifier with redacted, minimal fields.
-- **Prompt architecture** — closed-list output schema, data-not-instructions rule for descriptions, refusal path for arithmetic requests, jurisdiction vocabulary switch.
-- **Latency** — the numeric pipeline is synchronous Python (a 65-line sample runs in well under a second); agent calls are the only network hops and are batched.
+```text
+Source evidence -> redaction -> rules -> unresolved rows -> Lyzr classifier
+                                     -> validated labels
+                                     -> exact factor lookup -> Decimal calculator
+                                     -> immutable inventory revision
+Validated figures -> explicit draft action -> Lyzr writer -> number/claim checks
+Reviewed corrections + evidence + sections -> independent approval -> export
+```
 
-## API
+The orchestrator rejects unknown labels and invented narrative numbers. Unresolved lines remain gaps. Lyzr availability can change which residual lines are classified; totals are not guaranteed identical to rules-only mode.
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/api/runs` | multipart `files[]`, `org_name`, `jurisdiction` (CSRD/SEC), `default_region`, `prior_totals` JSON |
-| POST | `/api/demo` | run the bundled sample |
-| GET | `/api/runs`, `/api/runs/{id}` | list / fetch a run with ledger entries |
-| GET | `/api/runs/{id}/lineage/{line_id}` | full lineage for a line |
-| GET | `/api/runs/{id}/report?jurisdiction=CSRD&format=md` | disclosure (md or json) |
-| GET | `/api/runs/{id}/agent-log` | governance log |
-| POST | `/api/tools/match_factor`, `/api/tools/calculate` | deterministic tools for Lyzr agents |
-| GET | `/api/tools/units`, `/api/factors`, `/api/health` | reference data |
+Configure `LYZR_API_KEY`, `LYZR_CLASSIFIER_AGENT_ID` and `LYZR_WRITER_AGENT_ID` in the existing `.env`. Set `LYZR_DISABLED=true` to force offline operation even when credentials exist. Viewing a draft is read-only; requesting AI regeneration is an authenticated, CSRF-protected POST action.
 
-## Greenwashing controls
+Agent templates are in `agents/classifier` and `agents/disclosure_writer`. The numeric and PII safeguards here run in application code; the repository does not demonstrate certification of Lyzr Safe AI, or a separate deployed Lyzr Data Analysis Agent. Validate those provider-side configurations for the judging rubric.
 
-| ID | Severity | Check |
-|---|---|---|
-| GW01 | block | A tCO2e figure without a factor citation |
-| GW02 | block | Location- and market-based Scope 2 mixed in one total |
-| GW03 | block | "carbon neutral / net zero / offset" in narrative without an offset ledger |
-| GW04 | warn | Any scope fell >30% year-on-year vs prior period |
-| GW05 | warn | Scope 3 categories with spend but zero emissions |
-| GW06 | warn | Energy/fuel quantity outliers (kWh vs MWh, litre vs gallon) |
-| GW07 / GW08 | warn | Lines with no official factor / lines nobody could classify |
-| GW09 | info | More than half of the footprint is spend-based |
-| GW10 | warn | Low-confidence agent labels |
-| GW11 | warn | Same consumption in two source documents (counted once) |
-| GW12 | info | Identical rows within one file |
+For hosted tool calling, configure a separate 32+ character `LYZR_TOOL_TOKEN`, use HTTPS, and register `agents/tools/openapi.yaml` with Bearer authentication. That token authorizes only factor matching, calculation and units—not private inventory lineage. The local orchestrator also calls the same deterministic Python calculation functions directly.
 
-## Data notes
+## Publication provenance and legal profiles
 
-Factor tables are transcribed subsets of the official publications with citations; re-verify
-against the current release before a real filing. Spend-based (USEEIO) factors are per 2022 USD;
-lines in other currencies are reported as gaps rather than converted. The sample dataset is
-synthetic and contains deliberate traps (a gas bill in kWh, a PG&E electricity bill, duplicate
-PDF/ERP postings, names and account numbers) so the guardrails have something to catch.
+Run `backend/.venv/Scripts/python.exe backend/scripts/sync_factors.py` to reproduce the catalogue from pinned publications. Downloaded files are checked against pinned SHA-256 hashes; changed publications require explicit source review before accepting a new fingerprint.
 
-## Stretch goals (not built)
+- [UK 2026 conversion factors](https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2026): revised flat workbook; 2025 retained for historic reporting.
+- [EPA eGRID detailed data](https://www.epa.gov/egrid/detailed-data): the imported workbook is **2023 revision 2**, not an invented 2024 dataset.
+- [EPA Hub 2025](https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf): the verified automated mapping currently covers stationary natural gas, not the entire PDF.
+- [EU implementing/delegated acts](https://finance.ec.europa.eu/regulation-and-supervision/financial-services-legislation/implementing-and-delegated-acts/corporate-sustainability-reporting-directive_en): the versioned profile requires reporting-year and applicability review.
+- [SEC proposed rescission, May 2026](https://www.sec.gov/newsroom/press-releases/2026-49-sec-proposes-rescission-climate-related-disclosure-rules): the 2024 rule is treated as stayed; a proposal is not represented as a final rescission.
 
-Decarbonisation scenario simulator, supplier outreach agent for missing Scope 3 data, market-based
-Scope 2 with contractual instruments.
+The original 2023/2024 transcribed subsets remain available for historic reproduction but are marked unverified and block final export if used. Source verification means the imported number matches the pinned publication—not that its geography, GWP basis, fuel boundary or Scope 3 category is right for every invoice. Unsupported spend/country/methodology combinations require further authoritative data rather than guessed factors.
+
+## Verification
+
+```powershell
+.\backend\.venv\Scripts\python.exe -m pytest backend/tests -q
+npm --prefix frontend run build
+npm --prefix frontend run lint
+```
+
+Backend tests cover historical golden values, current official factors, finite-number refusals, full Excel sheet lineage, OCR success/failure handling, authentication/roles/CSRF, encrypted append-only records, missing-record tamper detection, migration, review conflicts, Scope 2 allocation, scenarios, supplier drafts and approval/export invalidation.
+
+OCR tests mock the OCR engine output; they do not establish recognition accuracy across real supplier scans. Test databases/keys are isolated from the existing workspace. Browser QA has exercised desktop/mobile navigation and the major data-entry workflows using the real local API.
+
+## Main code
+
+- `backend/app/workspace.py`: readiness, review, evidence, approval, export, market Scope 2, scenarios and supplier requests.
+- `backend/app/auth.py`, `security.py`, `ledger/db.py`: access controls, encryption and signed audit revisions.
+- `backend/app/regulations.py`: versioned legal reference profiles and disclosure section guidance.
+- `backend/scripts/sync_factors.py`: pinned-source factor import.
+- `frontend/src/App.tsx`, `components/Overview.tsx`, `CompliancePanels.tsx`, `ReviewEditor.tsx`: responsive application and workflows.

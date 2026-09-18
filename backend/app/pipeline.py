@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import hashlib
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -41,18 +42,29 @@ def _agent_payload(item: LineItem) -> dict:
 
 class Pipeline:
     def __init__(self, orchestrator: Optional[Orchestrator] = None):
-        self.orch = orchestrator or Orchestrator(allowed_activity_types=set(ACTIVITY_TYPES))
         self.lib = library()
+        self.orch = orchestrator or Orchestrator(allowed_activity_types=set(ACTIVITY_TYPES))
 
     # ------------------------------------------------------------------
-    def run(self, files: list[tuple[str, bytes]], org_name: str, jurisdiction: str = "CSRD", prior_totals: Optional[dict] = None, default_region: Optional[str] = None) -> tuple[RunSummary, list[LedgerEntry], list[AgentLogEntry]]:
+    def run(self, files: list[tuple[str, bytes]], org_name: str, jurisdiction: str = "CSRD", prior_totals: Optional[dict] = None, default_region: Optional[str] = None, actor: str = "system") -> tuple[RunSummary, list[LedgerEntry], list[AgentLogEntry]]:
         run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
         self.orch.log.clear()
 
         # 1. ingest (parsers redact as they go)
         items: list[LineItem] = []
         for name, content in files:
-            items.extend(ingest_file(name, content))
+            parsed = ingest_file(name, content)
+            sha = hashlib.sha256(content).hexdigest()
+            doc_id = db.document_id(run_id, name, content)
+            if not parsed:
+                parsed = [LineItem(line_id="unreadable", source_file=name, source_ref="document", description="No usable activity rows extracted; manual review required")]
+            for it in parsed:
+                it.source_sha256 = sha
+                it.document_id = doc_id
+                it.line_id = f"{doc_id[:12]}-{it.line_id}"
+            items.extend(parsed)
+        if len({it.line_id for it in items}) != len(items):
+            raise ValueError("Duplicate source files in this upload; submit each document once")
         if default_region:
             for it in items:
                 it.region = it.region or default_region
@@ -98,9 +110,11 @@ class Pipeline:
             findings=findings,
             report_allowed=not any(f.severity == "block" for f in findings),
             agent_mode=self.orch.mode,  # type: ignore[arg-type]
+            created_by=actor,
+            prior_totals={k: str(v) for k,v in (prior_totals or {}).items()} or None,
         )
         log = [AgentLogEntry(**l.as_dict()) for l in self.orch.log]
-        db.save_run(summary, entries, log)
+        db.save_run(summary, entries, log, actor=actor, files=files)
         return summary, entries, log
 
     # ------------------------------------------------------------------

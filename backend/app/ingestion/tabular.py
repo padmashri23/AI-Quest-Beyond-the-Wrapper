@@ -53,7 +53,10 @@ def _dec(v) -> Optional[Decimal]:
     s = str(v).strip().replace(",", "")
     if s == "" or s.lower() in {"nan", "none", "null"}:
         return None
-    s = re.sub(r"[^\d.\-]", "", s)
+    # Never turn 1e3 into 13, (100) into +100, or arbitrary text into a number.
+    s = re.sub(r'^[£$€]\s*', '', s)
+    if s.startswith('(') and s.endswith(')'): s='-'+s[1:-1]
+    if not re.fullmatch(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?',s):return None
     try:
         return Decimal(s)
     except InvalidOperation:
@@ -76,10 +79,22 @@ def _period(date: Optional[str]) -> Optional[str]:
 
 def parse_tabular(filename: str, content: bytes) -> list[LineItem]:
     if filename.lower().endswith((".xlsx", ".xls")):
-        df = pd.read_excel(io.BytesIO(content), dtype=str)
+        sheets = pd.read_excel(io.BytesIO(content), dtype=str, sheet_name=None)
+        result = []
+        for number, (sheet, frame) in enumerate(sheets.items(), 1):
+            if frame.empty:
+                continue
+            parsed = parse_tabular(filename + ".csv", frame.to_csv(index=False).encode())
+            for item in parsed:
+                item.source_file = filename
+                item.source_ref = f"sheet {sheet}, {item.source_ref}"
+                item.line_id = f"{item.line_id}-s{number}"
+            result.extend(parsed)
+        return result
     else:
         df = pd.read_csv(io.BytesIO(content), dtype=str, keep_default_na=False)
     df.columns = [str(c) for c in df.columns]
+    if len(df)>10000: raise ValueError('Each sheet/CSV is limited to 10,000 rows')
     mapping = _map_columns(df.columns)
     inv = {v: k for k, v in mapping.items()}
 

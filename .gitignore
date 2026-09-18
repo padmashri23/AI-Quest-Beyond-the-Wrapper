@@ -8,3 +8,10 @@ backend/data/*.db-*
 frontend/node_modules/
 frontend/dist/
 .DS_Store
+backend/data/.keys/
+backend/data/evidence/
+backend/data/*.sqlite*
+backend/data/official/*.xlsx
+backend/data/official/*.pdf
+frontend/test-results/
+frontend/playwright-report/

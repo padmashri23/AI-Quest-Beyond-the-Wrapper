@@ -21,8 +21,8 @@ SCOPE3_CATEGORY_NAMES = {
 }
 
 JURISDICTIONS = {
-    "CSRD": {"label": "EU CSRD / ESRS E1", "ghg_ref": "ESRS E1-6", "energy_ref": "ESRS E1-5", "assurance": "limited assurance under CSRD Art. 34, moving to reasonable assurance"},
-    "SEC": {"label": "US SEC Climate Disclosure (Reg S-K)", "ghg_ref": "Item 1504", "energy_ref": "Item 1502", "assurance": "attestation under Item 1505 (limited, then reasonable assurance for LAFs)"},
+    "CSRD": {"label": "EU CSRD / ESRS preparation (applicability review required)", "ghg_ref": "ESRS E1-6 (reporting-version review required)", "energy_ref": "ESRS E1-5", "assurance": "independent assurance requirements must be assessed for the entity and applicable reporting version"},
+    "SEC": {"label": "US climate disclosure preparation (2024 rules stayed)", "ghg_ref": "Item 1504 (stayed-rule reference only)", "energy_ref": "Item 1502", "assurance": "Item 1505 is a stayed-rule reference, not an asserted current attestation obligation; rescission was proposed in May 2026"},
 }
 
 

@@ -6,15 +6,23 @@ import pytest
 
 from app.calc.engine import calculate
 from app.calc.units import convert, dimension_of
-from app.factors.matcher import library
+from app.factors.matcher import library, FactorLibrary
 from app.guardrails.pii import redact_text
 from app.classify.rules import classify_by_rules
 from app.schemas import LineItem
 
 
 @pytest.fixture(scope="module")
-def lib():
-    return library()
+def lib(tmp_path_factory):
+    # These historical golden values remain fixed; current official imports are
+    # tested separately, so changing a publication never rewrites this baseline.
+    import shutil
+    from pathlib import Path
+    target=tmp_path_factory.mktemp('historical_factors')
+    source=Path(__file__).resolve().parents[1]/'app'/'factors'/'tables'
+    for name in ('defra_2023.json','epa_egrid_2022.json','epa_ghg_hub_2024.json'):
+        shutil.copyfile(source/name,target/name)
+    return FactorLibrary(target)
 
 
 def _factor(lib, activity, region, year=2025):
@@ -34,7 +42,7 @@ def test_us_grid_1000_kwh(lib):
 
 
 def test_camx_subregion_exact_and_unknown_subregion_falls_back(lib):
-    assert _factor(lib, "electricity_grid", "CAMX").match_quality == "exact"
+    assert _factor(lib, "electricity_grid", "CAMX").match_quality == "year_fallback"
     m = lib.match("electricity_grid", "NYCW", 2025)
     assert m.matched and m.match_quality == "region_fallback" and m.factor.region == "US"
 

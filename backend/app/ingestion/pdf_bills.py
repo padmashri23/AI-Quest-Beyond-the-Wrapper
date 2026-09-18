@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import re
+import os
 from decimal import Decimal
 from typing import Optional
 
@@ -36,8 +37,20 @@ _SKIP_LABELS = re.compile(r"\b(rate|price|charge|tariff|standing|vat|amount)\b|[
 def parse_pdf(filename: str, content: bytes) -> list[LineItem]:
     items: list[LineItem] = []
     with pdfplumber.open(io.BytesIO(content)) as pdf:
+        if len(pdf.pages)>100: raise ValueError('PDF page limit is 100; split larger documents')
         for pno, page in enumerate(pdf.pages, start=1):
             text = page.extract_text() or ""
+            ocr = False
+            if not text.strip():
+                try:
+                    import pytesseract
+                    if os.getenv('TESSERACT_CMD'):
+                        pytesseract.pytesseract.tesseract_cmd = os.environ['TESSERACT_CMD']
+                    text = pytesseract.image_to_string(page.to_image(resolution=200).original, timeout=30)
+                    ocr = True
+                except Exception:
+                    items.append(LineItem(line_id=f"{_slug(filename)}-p{pno}-ocr", source_file=filename, source_ref=f"page {pno}", description="Scanned page requires OCR/manual transcription; OCR unavailable or failed"))
+                    continue
             region = _guess_region(text)
             date = _first_date(text)
             vendor = _guess_vendor(text)
@@ -58,9 +71,9 @@ def parse_pdf(filename: str, content: bytes) -> list[LineItem]:
                     LineItem(
                         line_id=f"{_slug(filename)}-p{pno}-l{lno}",
                         source_file=filename,
-                        source_ref=f"page {pno}, line {lno}",
+                        source_ref=f"page {pno}, line {lno}" + (" (OCR; confirm against original)" if ocr else ""),
                         date=date,
-                        period=f"FY{date[-4:]}" if date and date[-4:].isdigit() else None,
+                        period=("FY" + re.search(r"20\d{2}", date).group(0)) if date and re.search(r"20\d{2}", date) else None,
                         vendor=red_vendor,
                         description=f"{label} ({kind})",
                         quantity=qty,
@@ -70,6 +83,8 @@ def parse_pdf(filename: str, content: bytes) -> list[LineItem]:
                         redactions=sorted(set(kinds + k2)),
                     )
                 )
+            if not page_items:
+                items.append(LineItem(line_id=f'{_slug(filename)}-p{pno}-review',source_file=filename,source_ref=f'page {pno}',description='No activity quantity extracted from this page; review or explicitly exclude with evidence'))
             items.extend(_prefer_reportable(page_items, kind))
     return items
 

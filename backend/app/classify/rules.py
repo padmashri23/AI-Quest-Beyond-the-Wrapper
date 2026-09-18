@@ -16,6 +16,7 @@ from ..schemas import Classification, LineItem
 
 # (rule_id, regex on description+vendor+gl_code, activity_type, required unit dimension or None)
 _RULES: list[tuple[str, re.Pattern, str, Optional[str]]] = [
+    ("R00_R410A", re.compile(r"\bR[- ]?410A\b", re.I), "refrigerant_r410a", "mass"),
     # NB: kWh/MWh are deliberately NOT electricity keywords; UK gas is billed in kWh too.
     ("R02_NATGAS", re.compile(r"\b(natural gas|gas supply|gas statement|therms?|mmbtu|ccf|scf|boiler gas|heating gas|gas bill|calorific)\b", re.I), "natural_gas_stationary", "energy"),
     ("R01_ELEC", re.compile(r"\b(electricity|electric|power supply|grid supply|utility power|edf|eon|octopus|pg&e|pacific gas|con ?edison|duke energy|oncor|txu)\b", re.I), "electricity_grid", "energy"),

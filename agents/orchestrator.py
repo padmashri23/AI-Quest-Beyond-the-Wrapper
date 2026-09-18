@@ -9,7 +9,8 @@ Contracts enforced here (this is the "clean handoff" the rubric asks for):
   is number-locked: any numeral not present in the payload rejects the draft and the
   deterministic template is used instead. The rejection is logged.
 * With no LYZR_API_KEY the orchestrator runs in "fallback" mode: rules-only labels and a
-  template narrative. Every numeric result is identical in both modes by construction.
+  template narrative. Math is deterministic for the same accepted inputs; agent labels
+  can change which residual lines are calculated, so mode totals can differ.
 """
 from __future__ import annotations
 
@@ -104,6 +105,7 @@ class Orchestrator:
         if not isinstance(data, list):
             return {}, len(batch)
         accepted: dict[str, dict] = {}
+        seen: set[str] = set()
         rejected = 0
         for obj in data:
             if not isinstance(obj, dict):
@@ -111,17 +113,25 @@ class Orchestrator:
                 continue
             lid = obj.get("line_id")
             act = obj.get("activity_type")
-            if lid not in ids or act is None:
+            if not isinstance(lid, str) or lid not in ids or not isinstance(act, str):
                 rejected += 1
                 continue
+            if lid in seen:
+                accepted.pop(lid, None)
+                rejected += 1
+                continue
+            seen.add(lid)
             if act not in self.allowed_activity_types:
                 rejected += 1
                 continue
             try:
                 conf = Decimal(str(obj.get("confidence", "0")))
             except InvalidOperation:
-                conf = Decimal("0")
-            conf = max(Decimal("0"), min(Decimal("1"), conf))
+                rejected += 1
+                continue
+            if not conf.is_finite() or not Decimal('0') <= conf <= Decimal('1'):
+                rejected += 1
+                continue
             reason = str(obj.get("reason", ""))[:200]
             if _NUM.search(reason) and re.search(r"(kg|tco2|co2e|factor)", reason, re.I):
                 reason = "[agent reason contained a numeric claim; stripped]"

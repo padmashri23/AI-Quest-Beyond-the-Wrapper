@@ -13,7 +13,7 @@ export default function AgentLog({ runId }: { runId: string }) {
         <span className="muted" style={{ marginLeft: 'auto' }}>{rows.length} events · ~{tokens.toLocaleString()} tokens · {latency} ms agent latency</span>
       </div>
       <p className="cap" style={{ marginTop: 0 }}>Every handoff between the rule engine, Lyzr agents and the deterministic tools. Numbers never originate in an agent step; labels and narrative are validated before use.</p>
-      <div className="tablewrap">
+      <div className="table-scroll">
         <table className="ledger">
           <thead><tr><th>Time</th><th>Actor</th><th>Mode</th><th>Step</th><th>Input</th><th>Output</th><th style={{ textAlign: 'right' }}>Tokens</th><th style={{ textAlign: 'right' }}>ms</th></tr></thead>
           <tbody>

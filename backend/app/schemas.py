@@ -29,13 +29,15 @@ class LineItem(BaseModel):
     currency: Optional[str] = None
     raw_text: Optional[str] = Field(default=None, description="Redacted raw text of the source row/line")
     redactions: list[str] = Field(default_factory=list, description="Kinds of PII removed from this row")
+    source_sha256: Optional[str] = None
+    document_id: Optional[str] = None
 
 
 class Classification(BaseModel):
     scope: Optional[Literal[1, 2, 3]] = None
     scope3_category: Optional[int] = Field(default=None, description="GHG Protocol Scope 3 category 1-15")
     activity_type: Optional[str] = Field(default=None, description="Key into the factor tables, e.g. electricity_grid")
-    method: Literal["rule", "agent", "unclassified"] = "unclassified"
+    method: Literal["rule", "agent", "unclassified", "reviewer"] = "unclassified"
     confidence: Decimal = Decimal("0")
     reason: str = ""
     rule_id: Optional[str] = None
@@ -58,6 +60,9 @@ class FactorRow(BaseModel):
     table_ref: str
     url: Optional[str] = None
     notes: Optional[str] = None
+    verified: bool = False
+    source_sha256: Optional[str] = None
+    source_row: Optional[str] = None
 
 
 class FactorMatch(BaseModel):
@@ -88,7 +93,7 @@ class Calculation(BaseModel):
     gas_breakdown: Optional[dict[str, Decimal]] = None
     formula: str
     rounding: str = "kg to 6 dp, tonnes to 6 dp, ROUND_HALF_EVEN"
-    engine: str = "python.decimal (28-digit context)"
+    engine: str = "python.decimal (60-digit local context)"
 
 
 class LedgerEntry(BaseModel):
@@ -152,3 +157,6 @@ class RunSummary(BaseModel):
     findings: list[Finding]
     report_allowed: bool
     agent_mode: Literal["lyzr", "fallback"]
+    revision: int = 1
+    created_by: str = "system"
+    prior_totals: Optional[dict[str, str]] = None

@@ -27,6 +27,7 @@ _DEFRA_FAMILY = {"GB", "UK", "IE"}
 
 # Human-readable catalogue of activity keys the classifier may emit.
 ACTIVITY_TYPES: dict[str, dict] = {
+    "refrigerant_r410a": {"scope": 1, "label": "R410A refrigerant leakage", "units": ["kg"]},
     "electricity_grid": {"scope": 2, "label": "Purchased electricity (grid)", "units": ["kWh", "MWh"]},
     "electricity_transmission_losses": {"scope": 3, "cat": 3, "label": "T&D losses on purchased electricity", "units": ["kWh"]},
     "natural_gas_stationary": {"scope": 1, "label": "Natural gas, stationary combustion", "units": ["kWh", "therm", "mmBtu", "scf_natural_gas", "ccf"]},
@@ -66,15 +67,17 @@ class FactorLibrary:
             self.tables.append({k: v for k, v in data.items() if k != "rows"})
             for r in data["rows"]:
                 r = dict(r)
+                r.setdefault("url", data.get("url"))
                 r["value"] = Decimal(r["value"])
                 if r.get("components"):
                     r["components"] = {g: Decimal(v) for g, v in r["components"].items()}
                 self.rows.append(FactorRow(**r))
+                ACTIVITY_TYPES.setdefault(r["activity_type"], {"scope": r["scope"], "cat": r.get("scope3_category"), "label": r["table_ref"], "units": [r["unit"]]})
         self._index: dict[tuple[str, str], list[FactorRow]] = {}
         for row in self.rows:
             self._index.setdefault((row.activity_type, row.region), []).append(row)
         for lst in self._index.values():
-            lst.sort(key=lambda r: r.year, reverse=True)
+            lst.sort(key=lambda r: (r.year, r.verified), reverse=True)
 
     # ------------------------------------------------------------------
     def _lookup(self, activity: str, region: str, year: Optional[int]) -> tuple[Optional[FactorRow], str]:
@@ -85,9 +88,9 @@ class FactorLibrary:
             return rows[0], "exact"
         for r in rows:  # newest first
             if r.year <= year:
-                return r, "exact" if r.year == year or r is rows[0] else "year_fallback"
+                return r, "exact" if r.year == year else "year_fallback"
         # all rows newer than requested year: use oldest available and flag
-        return rows[-1], "year_fallback"
+        return None, "none"
 
     def match(self, activity_type: Optional[str], region: Optional[str], year: Optional[int] = None) -> FactorMatch:
         req = {"activity_type": activity_type, "region": region, "year": year}

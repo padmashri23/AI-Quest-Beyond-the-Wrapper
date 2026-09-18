@@ -8,6 +8,18 @@ info:
     tool in Lyzr Agent Studio (Tools -> OpenAPI) and attach to the agents.
 servers:
   - url: http://localhost:8000
+security:
+  - toolBearer: []
+components:
+  securitySchemes:
+    workspaceSession:
+      type: apiKey
+      in: cookie
+      name: copilot_session
+    toolBearer:
+      type: http
+      scheme: bearer
+      description: LYZR_TOOL_TOKEN, minimum 32 characters; authorizes factor/calculation/unit tools only, not private inventory lineage.
 paths:
   /api/tools/match_factor:
     post:
@@ -75,6 +87,8 @@ paths:
                   conversion: {type: object, nullable: true}
   /api/tools/lineage/{run_id}/{line_id}:
     get:
+      security:
+        - workspaceSession: []
       operationId: get_lineage
       summary: Full audit lineage for one ledger line (source row -> classification -> factor -> calculation).
       parameters:

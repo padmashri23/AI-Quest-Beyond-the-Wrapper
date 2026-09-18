@@ -2,6 +2,8 @@
 the orchestrator's number-lock and label validation contracts."""
 from decimal import Decimal
 from pathlib import Path
+import json
+import pytest
 
 from app.pipeline import Pipeline
 from app.reports.render import figures_payload, render_markdown, template_narrative
@@ -64,3 +66,22 @@ def test_label_validation_rejects_unknown_activity():
     text = '[{"line_id":"a","activity_type":"electricity_grid","confidence":0.9,"reason":"ok"},{"line_id":"b","activity_type":"made_up","confidence":0.9,"reason":"x"}]'
     accepted, rejected = o._validate_labels(batch, text)
     assert set(accepted) == {"a"} and rejected == 1
+
+
+@pytest.mark.parametrize('malformed', [
+    {'line_id': ['a'], 'activity_type': 'electricity_grid'},
+    {'line_id': 'a', 'activity_type': {}},
+    *[{'line_id': 'a', 'activity_type': 'electricity_grid', 'confidence': value}
+      for value in ('NaN', 'Infinity', '-Infinity', 'garbage', '-0.1', '1.1')],
+])
+def test_agent_labels_fail_closed_on_malformed_fields(malformed):
+    orchestrator = Orchestrator(client=LyzrClient(api_key=''), allowed_activity_types={'electricity_grid'})
+    accepted, rejected = orchestrator._validate_labels([{'line_id': 'a'}], json.dumps([malformed]))
+    assert accepted == {} and rejected == 1
+
+
+def test_duplicate_agent_labels_are_not_arbitrarily_selected():
+    orchestrator = Orchestrator(client=LyzrClient(api_key=''), allowed_activity_types={'electricity_grid'})
+    label = {'line_id': 'a', 'activity_type': 'electricity_grid', 'confidence': '0.9'}
+    accepted, rejected = orchestrator._validate_labels([{'line_id': 'a'}], json.dumps([label, label]))
+    assert accepted == {} and rejected > 0

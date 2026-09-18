@@ -1,0 +1,12 @@
+.git
+.env
+**/.venv
+**/__pycache__
+**/node_modules
+frontend/dist
+backend/data/*.db*
+backend/data/.keys
+backend/data/evidence
+backend/data/official/*.xlsx
+backend/data/official/*.pdf
+**/test-results

@@ -17,14 +17,15 @@ _CLAIM_WORDS = re.compile(r"\b(carbon[- ]neutral|net[- ]zero|climate[- ]positive
 
 
 def mark_cross_file_duplicates(entries: list[LedgerEntry]) -> int:
-    """Flag a calculated line as duplicate when an earlier line from a DIFFERENT file has the
-    same activity, converted quantity, region and period. Returns the number flagged."""
+    """Deduplicate only byte-identical source documents retained under different names."""
     seen: dict[tuple, LedgerEntry] = {}
     n = 0
     for e in entries:
         if e.status != "calculated" or not e.calculation:
             continue
-        k = (e.classification.activity_type, str(e.calculation.quantity_converted), (e.item.region or "").upper(), e.item.period)
+        # Only byte-identical retained source documents are automatically deduplicated.
+        # Equal consumption at two sites or dates is not evidence of duplication.
+        k = (e.item.source_sha256 or e.item.source_file, e.item.source_ref, e.classification.activity_type, str(e.calculation.quantity_converted))
         prev = seen.get(k)
         if prev and prev.item.source_file != e.item.source_file:
             e.status = "duplicate"
@@ -101,7 +102,15 @@ def run_checks(entries: list[LedgerEntry], totals: ScopeTotals, prior_totals: Op
     # GW11: cross-source duplicates removed from totals (utility PDF vs ERP export)
     dups = [e for e in entries if e.status == "duplicate"]
     if dups:
-        findings.append(Finding(check_id="GW11", severity="warn", title="Same consumption present in two source documents", detail="Identical activity, quantity, region and period found in different files (e.g. a utility bill and the ERP posting of that bill). Counted once; the later line is excluded and linked to the original.", line_ids=[e.item.line_id for e in dups]))
+        findings.append(Finding(check_id="GW11", severity="warn", title="Identical source document uploaded twice", detail="Byte-identical retained documents under different names contain the same source row. Counted once; confirm the duplicate exclusion.", line_ids=[e.item.line_id for e in dups]))
+
+    candidates=defaultdict(list)
+    for e in entries:
+        if e.status=='calculated' and e.calculation:
+            candidates[(e.classification.activity_type,str(e.calculation.quantity_converted),e.item.region,e.item.period)].append(e)
+    suspect=[e.item.line_id for group in candidates.values() if len({e.item.source_file for e in group})>1 for e in group]
+    if suspect:
+        findings.append(Finding(check_id='GW13',severity='warn',title='Possible cross-document duplication',detail='Equal activity, consumption, region and period appear in different sources. Kept in totals until a human verifies whether these represent the same invoice or distinct events.',line_ids=suspect))
 
     # GW12: identical rows inside one file (may be legitimate, e.g. two travellers on one flight)
     seen: dict[tuple, str] = {}

@@ -3,6 +3,8 @@
 export type Scope = 1 | 2 | 3 | null
 
 export interface LineItem {
+  document_id: string | null
+  source_sha256: string | null
   line_id: string
   source_file: string
   source_ref: string
@@ -24,13 +26,16 @@ export interface Classification {
   scope: Scope
   scope3_category: number | null
   activity_type: string | null
-  method: 'rule' | 'agent' | 'unclassified'
+  method: 'rule' | 'agent' | 'unclassified' | 'reviewer'
   confidence: string
   reason: string
   rule_id: string | null
 }
 
 export interface FactorRow {
+  verified: boolean
+  source_row: string | null
+  source_sha256: string | null
   factor_id: string
   activity_type: string
   scope: 1 | 2 | 3
@@ -113,6 +118,8 @@ export interface ScopeTotals {
 }
 
 export interface RunSummary {
+  revision: number
+  created_by: string
   run_id: string
   created_at: string
   org_name: string

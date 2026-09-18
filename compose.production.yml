@@ -1,0 +1,57 @@
+# Preparation only: real DNS, a domain and externally managed secret files are required.
+# Never combine this file with docker-compose.yml, which publishes a development port.
+services:
+  copilot:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=768m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      APP_ENV: production
+      ALLOWED_ORIGINS: https://${COPILOT_DOMAIN:?Set COPILOT_DOMAIN}
+      ALLOWED_HOSTS: ${COPILOT_DOMAIN:?Set COPILOT_DOMAIN}
+      LEDGER_PATH: /app/data/ledger.db
+      DATA_ENCRYPTION_KEY_FILE: /run/secrets/data_key
+      AUDIT_SIGNING_KEY_FILE: /run/secrets/audit_key
+      BACKUP_ENCRYPTION_KEY_FILE: /run/secrets/backup_key
+      LYZR_DISABLED: ${LYZR_DISABLED:-true}
+    secrets: [data_key, audit_key, backup_key]
+    volumes:
+      - ledger:/app/data
+    expose: ['8000']
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/ready',timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    # Direct client IP forwarding is intentionally disabled. Configure trusted
+    # proxy ranges for your chosen host before relying on per-client rate limits.
+    command: [uvicorn, 'app.main:app', --host, 0.0.0.0, --port, '8000', --no-proxy-headers, --limit-concurrency, '30', --timeout-keep-alive, '5']
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443']
+    environment:
+      COPILOT_DOMAIN: ${COPILOT_DOMAIN:?Set COPILOT_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      copilot:
+        condition: service_healthy
+secrets:
+  data_key:
+    file: ${DATA_KEY_FILE:?Set DATA_KEY_FILE to your mounted secret file}
+  audit_key:
+    file: ${AUDIT_KEY_FILE:?Set AUDIT_KEY_FILE to a different secret file}
+  backup_key:
+    file: ${BACKUP_KEY_FILE:?Set BACKUP_KEY_FILE to a third secret file}
+volumes:
+  ledger:
+  caddy_data:
+  caddy_config:

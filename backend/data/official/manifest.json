@@ -1,0 +1,22 @@
+[
+  {
+    "file": "defra_2025.xlsx",
+    "url": "https://assets.publishing.service.gov.uk/media/6846b6ea57f3515d9611f0dd/ghg-conversion-factors-2025-flat-format.xlsx",
+    "sha256": "8bfdb45b81ec4a88e3bdf4584637330f62e6bd09ce1940e654c5d7b7f736de94"
+  },
+  {
+    "file": "defra_2026.xlsx",
+    "url": "https://assets.publishing.service.gov.uk/media/6a6c9748862aaf18d9c62ac9/ghg-conversion-factors-2026-flat-format-revised.xlsx",
+    "sha256": "a9a455ab396dae226d510c7be6233748416d490c41a5d20f3dc7a0c45feecd5e"
+  },
+  {
+    "file": "egrid_2023.xlsx",
+    "url": "https://www.epa.gov/system/files/documents/2025-06/egrid2023_data_rev2.xlsx",
+    "sha256": "895cd81dd8662406189ad8adf5a2578dcb362cdb5cff7cca81b10ee6bd2447c6"
+  },
+  {
+    "file": "epa_hub_2025.pdf",
+    "url": "https://www.epa.gov/system/files/documents/2025-01/ghg-emission-factors-hub-2025.pdf",
+    "sha256": "5d07c678fae6783623acb1e23faa4a7c46268ee6c5a0654c9e49c50de7caf924"
+  }
+]

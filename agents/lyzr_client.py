@@ -31,7 +31,9 @@ class AgentReply:
 
 class LyzrClient:
     def __init__(self, api_key: Optional[str] = None, user_id: Optional[str] = None, timeout: float = 60.0):
-        self.api_key = api_key or os.getenv("LYZR_API_KEY", "").strip()
+        self.api_key = api_key if api_key is not None else os.getenv("LYZR_API_KEY", "").strip()
+        if os.getenv('LYZR_DISABLED','').lower() in {'1','true','yes'}:
+            self.api_key = ''
         self.user_id = user_id or os.getenv("LYZR_USER_ID", "carbon-copilot@local")
         self.timeout = timeout
 
@@ -53,4 +55,6 @@ class LyzrClient:
             data = r.json()
         latency = int((time.perf_counter() - t0) * 1000)
         text = data.get("response") if isinstance(data, dict) else str(data)
+        if not isinstance(text, str):
+            raise ValueError('Agent response must contain a text response')
         return AgentReply(text=text or "", latency_ms=latency, session_id=sid, raw=data if isinstance(data, dict) else {"raw": data})
