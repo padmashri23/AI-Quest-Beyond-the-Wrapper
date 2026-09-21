@@ -9,7 +9,6 @@
         }
     }
 }
-
 {$COPILOT_DOMAIN} {
     encode zstd gzip
     request_body {
