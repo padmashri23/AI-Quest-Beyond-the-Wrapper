@@ -2,7 +2,6 @@
 
     kg CO2e = quantity_in_factor_unit x factor_value
     t CO2e  = kg CO2e / 1000
-
 Uses python.decimal with a 28-digit context. No floats anywhere. The returned
 Calculation carries every operand so the audit trail can reproduce the figure by hand.
 """
