@@ -40,7 +40,6 @@ def load(folder: str) -> dict:
         body["response_format"] = cfg["response_format"]
     return body
 
-
 def main() -> int:
     key = os.getenv("LYZR_API_KEY")
     if not key:
