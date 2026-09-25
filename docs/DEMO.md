@@ -40,7 +40,7 @@ Do not enter made-up disclosure evidence just to make a real inventory appear re
 
 For the weighted tracks, show the orchestrator/tool boundary (30%), verified factor + calculation details (30%), original-to-export lineage (20%), and working dashboard controls (20%). Do not invent a numeric judge score.
 
-## Live Lyzr demonstration: separate preflight
+## Live Lyzr demonstration: separate preflight  
 
 Only claim a live Lyzr run after confirming the configured classifier/writer IDs, successful calls with synthetic inputs, the actual tool registrations and the provider's Data Analysis Agent / Safe AI settings. The current offline suite validates application-side safeguards, not those hosted capabilities. Capture a sanitized execution trace and provider usage evidence without API keys or personal data.
 
