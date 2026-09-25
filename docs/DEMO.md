@@ -1,6 +1,6 @@
 # Hackathon demo: Carbon Copilot
 
-## What to say
+## What to say   
 
 "Carbon Copilot turns invoices and activity logs into traceable carbon accounts. AI helps interpret data, deterministic tools calculate emissions, and people approve the evidence. It refuses to present unresolved or unsupported results as a final reviewed dossier."
 
