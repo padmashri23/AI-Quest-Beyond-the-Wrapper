@@ -1,6 +1,4 @@
-from pathlib import Path
 import json
-import sqlite3
 import pytest
 from cryptography.fernet import Fernet
 from app import operations

@@ -6,7 +6,6 @@ Original publications are retained with SHA-256 manifests; no LLM extracts numbe
 from pathlib import Path
 import hashlib
 import json
-import sys
 from decimal import Decimal
 import openpyxl
 import pdfplumber
@@ -109,7 +108,7 @@ def compile_tables():
         iterator=iter(w[sheet].values); next(iterator); headers=next(iterator)
         if column not in headers: raise ValueError(f'Missing eGRID output-rate column: {column}')
         for n,r in enumerate(iterator,3):
-            d=dict(zip(headers,r))
+            d=dict(zip(headers,r,strict=False))  # eGRID rows may be shorter than the header row
             if d.get(column) in (None, '--'): continue
             region=d.get('SUBRGN','US')
             rate=Decimal(str(d[column])) * Decimal('0.45359237') / 1000
@@ -132,7 +131,7 @@ def compile_tables():
            'source':'EPA GHG Emission Factors Hub 2025','table_ref':'Table 1, Natural Gas; kg CO2 and grams CH4/N2O per mmBtu',
            'url':manifest[name]['url'],'source_sha256':manifest[name]['sha256'],'source_row':'PDF page 1, Table 1 Natural Gas','verified':True}]
     (tables/'official_epa_hub_2025.json').write_text(json.dumps({'table_id':'EPA_HUB2025_VERIFIED',**manifest[name],'rows':rows},indent=2),encoding='utf-8')
-    print(f'eGRID: 27 subregions/US where present; EPA verified natural gas imported')
+    print('eGRID: 27 subregions/US where present; EPA verified natural gas imported')
 
 
 if __name__ == "__main__":

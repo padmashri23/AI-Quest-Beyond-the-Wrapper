@@ -87,13 +87,13 @@ def run_checks(entries: list[LedgerEntry], totals: ScopeTotals, prior_totals: Op
         if e.calculation and (act.startswith("electricity") or act.endswith("_stationary") or act.endswith("_mobile")):
             by_act[f"{act}/{e.calculation.unit_converted}"].append(e)  # compare like units only
     outliers: list[str] = []
-    for act, lst in by_act.items():
+    for lst in by_act.values():
         if len(lst) < 4:
             continue
         vals = [float(x.calculation.quantity_converted) for x in lst]
         med = statistics.median(vals)
         mad = statistics.median([abs(v - med) for v in vals]) or 1e-9
-        for x, v in zip(lst, vals):
+        for x, v in zip(lst, vals, strict=True):
             if abs(v - med) / (1.4826 * mad) > 8:
                 outliers.append(x.item.line_id)
     if outliers:

@@ -1,20 +1,6 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
-import type { LedgerEntry, RunPayload, RunSummary } from "./api";
-import {
-  request,
-  session,
-  type Catalog,
-  type User,
-  type Workspace,
-} from "./workspace";
+import { lazy, Suspense, useEffect, type FormEvent } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { NAV, useStore } from "./store";
 import {
   EntryTable,
   Field,
@@ -47,16 +33,6 @@ const AuditPanel = lazy(() =>
   Panels().then((m) => ({ default: m.AuditPanel })),
 );
 const TeamPanel = lazy(() => Panels().then((m) => ({ default: m.TeamPanel })));
-const NAV = [
-  "Overview",
-  "Activity ledger",
-  "Review queue",
-  "Disclosures",
-  "Reduction plans",
-  "Suppliers",
-  "Factor library",
-  "Audit trail",
-] as const;
 const descriptions: Record<string, string> = {
   "Activity ledger": "Every activity, connected to its source and calculation.",
   "Review queue":
@@ -70,117 +46,77 @@ const descriptions: Record<string, string> = {
   Team: "The right access. Independent accountability.",
 };
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [checking, setChecking] = useState(true);
-  const [loadingInventory, setLoadingInventory] = useState(true);
-  const [runs, setRuns] = useState<RunSummary[]>([]);
-  const [run, setRun] = useState<RunPayload | null>(null);
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [page, setPage] = useState("Overview");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [upload, setUpload] = useState(false);
-  const [selected, setSelected] = useState<LedgerEntry | null>(null);
-  const [menu, setMenu] = useState(false);
-  const sequence = useRef(0);
+  const {
+    user,
+    checking,
+    loadingInventory,
+    runs,
+    run,
+    workspace,
+    catalog,
+    page,
+    error,
+    busy,
+    upload,
+    selected,
+    menu,
+  } = useStore(
+    useShallow((s) => ({
+      user: s.user,
+      checking: s.checking,
+      loadingInventory: s.loadingInventory,
+      runs: s.runs,
+      run: s.run,
+      workspace: s.workspace,
+      catalog: s.catalog,
+      page: s.page,
+      error: s.error,
+      busy: s.busy,
+      upload: s.upload,
+      selected: s.selected,
+      menu: s.menu,
+    })),
+  );
+  const {
+    bootstrap,
+    signIn,
+    loadInventories,
+    open,
+    reload,
+    importFiles,
+    demo,
+    logout,
+    navigate,
+    setError,
+    toggleMenu,
+    showUpload,
+    select,
+  } = useStore(
+    useShallow((s) => ({
+      bootstrap: s.bootstrap,
+      signIn: s.signIn,
+      loadInventories: s.loadInventories,
+      open: s.open,
+      reload: s.reload,
+      importFiles: s.importFiles,
+      demo: s.demo,
+      logout: s.logout,
+      navigate: s.navigate,
+      setError: s.setError,
+      toggleMenu: s.toggleMenu,
+      showUpload: s.showUpload,
+      select: s.select,
+    })),
+  );
   useEffect(() => {
-    request<User>("/auth/me")
-      .then((u) => {
-        session(u);
-        setUser(u);
-      })
-      .catch(() => {})
-      .finally(() => setChecking(false));
-  }, []);
-  const open = useCallback(async (id: string) => {
-    const seq = ++sequence.current;
-    setBusy(true);
-    setError("");
-    try {
-      const [r, w] = await Promise.all([
-        request<RunPayload>(`/runs/${id}`),
-        request<Workspace>(`/runs/${id}/workspace`),
-      ]);
-      if (seq === sequence.current) {
-        setRun(r);
-        setWorkspace(w);
-      }
-    } catch (e) {
-      if (seq === sequence.current) setError((e as Error).message);
-    } finally {
-      if (seq === sequence.current) setBusy(false);
-    }
-  }, []);
+    void bootstrap();
+  }, [bootstrap]);
   useEffect(() => {
-    if (!user) return;
-    let active = true;
-    Promise.all([request<RunSummary[]>("/runs"), request<Catalog>("/factors")])
-      .then(async ([list, c]) => {
-        if (!active) return;
-        setRuns(list);
-        setCatalog(c);
-        if (list[0]) await open(list[0].run_id);
-      })
-      .catch((e) => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoadingInventory(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [user, open]);
-  const reload = async () => {
-    if (run) await open(run.summary.run_id);
-    setRuns(await request<RunSummary[]>("/runs"));
-  };
-  async function importFiles(e: FormEvent<HTMLFormElement>) {
+    if (user) void loadInventories();
+  }, [user, loadInventories]);
+  function submitImport(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setBusy(true);
-    setError("");
-    try {
-      const result = await request<RunPayload>("/runs", {
-        method: "POST",
-        body: new FormData(e.currentTarget),
-      });
-      setRuns(await request<RunSummary[]>("/runs"));
-      await open(result.summary.run_id);
-      setUpload(false);
-      setPage("Overview");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function demo() {
-    setBusy(true);
-    setError("");
-    try {
-      const r = await request<RunPayload>("/demo", { method: "POST" });
-      setRuns(await request<RunSummary[]>("/runs"));
-      await open(r.summary.run_id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function logout() {
-    try {
-      await request("/auth/logout", { method: "POST" });
-      session(null);
-      setUser(null);
-      setLoadingInventory(true);
-      setRun(null);
-      setWorkspace(null);
-      setCatalog(null);
-      setRuns([]);
-    } catch (e) {
-      setError((e as Error).message);
-    }
+    void importFiles(new FormData(e.currentTarget));
   }
   if (checking)
     return (
@@ -189,12 +125,8 @@ export default function App() {
         <p>Opening your workspace…</p>
       </div>
     );
-  if (!user) return <Login onLogin={setUser} />;
+  if (!user) return <Login onLogin={signIn} />;
   const canEdit = ["admin", "analyst"].includes(user.role);
-  const navigate = (name: string) => {
-    setPage(name);
-    setMenu(false);
-  };
   // Only rendered inside the run/workspace non-null branch below.
   const panelProps = { run: run!, workspace: workspace!, user, reload };
   return (
@@ -246,7 +178,11 @@ export default function App() {
               <strong>{user.display_name}</strong>
               <small>{user.role}</small>
             </div>
-            <button onClick={logout} title="Sign out" aria-label="Sign out">
+            <button
+              onClick={() => void logout()}
+              title="Sign out"
+              aria-label="Sign out"
+            >
               ↪
             </button>
           </div>
@@ -256,7 +192,7 @@ export default function App() {
         <header className="topbar">
           <button
             className="icon-button menu-toggle"
-            onClick={() => setMenu(!menu)}
+            onClick={toggleMenu}
             aria-label="Toggle navigation"
           >
             ☰
@@ -280,7 +216,7 @@ export default function App() {
               ))}
             </select>
             {canEdit && (
-              <button className="btn primary" onClick={() => setUpload(true)}>
+              <button className="btn primary" onClick={() => showUpload(true)}>
                 ＋ <span>Import activity</span>
               </button>
             )}
@@ -350,11 +286,15 @@ export default function App() {
                   <div className="actions">
                     <button
                       className="btn primary"
-                      onClick={() => setUpload(true)}
+                      onClick={() => showUpload(true)}
                     >
                       Import your first activity
                     </button>
-                    <button className="btn" disabled={busy} onClick={demo}>
+                    <button
+                      className="btn"
+                      disabled={busy}
+                      onClick={() => void demo()}
+                    >
                       Explore sample inventory
                     </button>
                   </div>
@@ -371,12 +311,12 @@ export default function App() {
                     run={run}
                     workspace={workspace}
                     navigate={navigate}
-                    select={setSelected}
+                    select={select}
                   />
                 )}
                 {page === "Activity ledger" && (
                   <>
-                    <EntryTable entries={run.entries} select={setSelected} />
+                    <EntryTable entries={run.entries} select={select} />
                     <EvidencePanel {...panelProps} />
                   </>
                 )}
@@ -411,7 +351,7 @@ export default function App() {
                         Prepare disclosure sections →
                       </button>
                     </section>
-                    <EntryTable entries={run.entries} select={setSelected} />
+                    <EntryTable entries={run.entries} select={select} />
                     <MarketPanel {...panelProps} />
                   </>
                 )}
@@ -442,14 +382,14 @@ export default function App() {
         <Modal
           title="Import activity"
           close={() => {
-            if (!busy) setUpload(false);
+            if (!busy) showUpload(false);
           }}
         >
           <p className="muted">
             Create a separate inventory for each reporting period. Original
             documents are retained as encrypted audit evidence.
           </p>
-          <form onSubmit={importFiles}>
+          <form onSubmit={submitImport}>
             <Field label="Organization">
               <input
                 name="org_name"
@@ -507,7 +447,7 @@ export default function App() {
             run={run}
             workspace={workspace}
             catalog={catalog}
-            close={() => setSelected(null)}
+            close={() => select(null)}
             saved={reload}
             canEdit={user.role !== "auditor"}
           />

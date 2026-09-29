@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -17,3 +16,17 @@ def isolated_workspace(tmp_path, monkeypatch):
     monkeypatch.setenv('LYZR_API_KEY', '')
     monkeypatch.setenv('LYZR_DISABLED', 'true')
     monkeypatch.setenv('APP_ENV', 'development')
+
+
+@pytest.fixture
+def client():
+    """A TestClient signed in as the bootstrap administrator with its CSRF header set."""
+    from fastapi.testclient import TestClient
+    from app.main import app
+    from helpers import PASSWORD
+
+    with TestClient(app) as c:
+        assert c.post('/api/auth/setup', json={'username': 'preparer', 'password': PASSWORD}).status_code == 200
+        login = c.post('/api/auth/login', json={'username': 'preparer', 'password': PASSWORD})
+        c.headers['x-csrf-token'] = login.json()['csrf']
+        yield c

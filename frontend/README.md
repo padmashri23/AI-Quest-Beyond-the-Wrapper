@@ -1,32 +1,42 @@
-# React + TypeScript + Vite
+# Carbon Copilot dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + TypeScript + Vite front end for the Carbon Copilot API. In production the
+built files are served by the FastAPI backend; in development Vite proxies `/api` to
+port 8000.
 
-Currently, two official plugins are available:
+## Scripts
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Vite dev server on port 5173 with the API proxy |
+| `npm run typecheck` | `tsc -b` over the app and config projects |
+| `npm run lint` | oxlint (React hooks and TypeScript rules) |
+| `npm test` | Vitest, single run |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run test:coverage` | Vitest with V8 coverage and the thresholds in `vite.config.ts` |
+| `npm run build` | Typecheck, then a production bundle in `dist/` |
 
-## React Compiler
+Dependencies are pinned to exact versions (`.npmrc` sets `save-exact`), so `npm install <pkg>`
+records the resolved version rather than a range.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Structure
 
-## Expanding the Oxlint configuration
+- `src/store.ts`: Zustand store for the application shell. It owns the session, the
+  inventory list, the open run and workspace, the factor catalogue, navigation and
+  request state, and exposes the actions that load or change them (`bootstrap`,
+  `loadInventories`, `open`, `importFiles`, `demo`, `logout`, ...). Components subscribe
+  to slices with `useStore(selector)`; panel-local form state stays in the component.
+- `src/workspace.ts`: typed `request`/`send` helpers (CSRF header, JSON errors) and the
+  workspace types.
+- `src/api.ts`: ledger and report types plus display labels.
+- `src/App.tsx`: layout, navigation and lazy-loaded page panels.
+- `src/components/`: overview, ledger table, review editor, compliance panels.
+- `src/test/`: Vitest suites. `fixtures.ts` provides data builders and `mockFetch`, a
+  route-based `fetch` stub keyed as `"METHOD /path"`; `setup.ts` registers jest-dom
+  matchers and resets the store between tests.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Testing conventions
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Tests run in jsdom with Testing Library. Mock the API with `mockFetch({...})` rather than
+mocking modules, so the real `request` wrapper, headers and error handling are exercised.
+Reset happens automatically after each test (DOM cleanup, global stubs, store state).

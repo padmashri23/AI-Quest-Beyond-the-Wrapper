@@ -1,0 +1,48 @@
+# Repository-level tool configuration. Run every command below from the repository root.
+#   python -m pytest                 -> backend test-suite (testpaths below)
+#   python -m pytest --cov           -> same, with the coverage gate enforced
+#   python -m ruff check .           -> lint backend/ and agents/
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "slow: end-to-end runs over the bundled sample dataset",
+]
+
+[tool.coverage.run]
+source = ["backend/app", "agents"]
+omit = [
+    # Operator command-line entry points exercised through their functions, not their __main__ blocks.
+    "backend/app/admin.py",
+    "agents/deploy_agents.py",
+]
+
+[tool.coverage.report]
+fail_under = 88
+precision = 1
+show_missing = true
+exclude_also = [
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 200
+extend-exclude = ["backend/.venv", "frontend", "backend/data"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B"]
+ignore = [
+    "E701", "E702",  # the codebase uses compact one-line statements deliberately
+    "E731",          # lambda assignment is used for small local helpers
+    "E741",          # short loop names such as `l` for log entries are established here
+    "B008",          # FastAPI File()/Form() defaults are the documented pattern
+    "B904",          # HTTPException re-raises intentionally hide internal causes
+]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules must load .env or fix sys.path before importing the application.
+"backend/app/main.py" = ["E402"]
+"backend/app/admin.py" = ["E402"]
+"backend/tests/conftest.py" = ["E402"]

@@ -54,7 +54,7 @@ This implementation handles database snapshots up to 256 MB, uses in-memory encr
 - `GET /api/ready` is a minimal public readiness probe: database connectivity plus decryption of the latest inventory, when present. It is not a full audit-chain, factor or Lyzr health check.
 - `GET /api/operations` is administrator-only. It exposes current-process request counts, errors, average/max durations and honest integration status. Metrics reset on restart and are not aggregated across workers.
 - Structured request logs contain generated request IDs, normalized route templates, bounded method names, status and duration; no bodies, queries, cookies or user-supplied filenames. Configure infrastructure log retention/access separately. Review other server/proxy log sources before promising end-to-end PII-free logging.
-- `.github/workflows/verify.yml` prepares offline backend tests, frontend build/lint, Python requirements auditing and production npm dependency auditing on push/PR. It has not been run by GitHub here. Deployment approval, alert routing and independent application security testing are not supplied by that workflow.
+- `.github/workflows/ci.yml` runs on push to `main`, pull requests and manual dispatch: backend lint, tests with a coverage gate and Python requirements auditing; frontend typecheck, lint, unit tests with coverage thresholds, build and production npm dependency auditing; then a Docker image build with a `/api/health` smoke test. Coverage reports and the built dashboard are uploaded as artifacts. Deployment approval, alert routing and independent application security testing are not supplied by that workflow.
 
 ## API workflow
 

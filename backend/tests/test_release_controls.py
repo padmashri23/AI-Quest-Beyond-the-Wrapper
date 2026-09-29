@@ -6,7 +6,7 @@ from app.main import app
 from app.ledger import db
 from app.security import secret
 from app import operations, runtime
-from test_workspace import client, inventory, PASSWORD
+from helpers import PASSWORD, inventory
 
 
 def test_supplier_approval_is_required_bound_to_content_and_audited(client):

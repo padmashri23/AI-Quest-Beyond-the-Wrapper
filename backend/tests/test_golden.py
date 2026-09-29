@@ -6,7 +6,7 @@ import pytest
 
 from app.calc.engine import calculate
 from app.calc.units import convert, dimension_of
-from app.factors.matcher import library, FactorLibrary
+from app.factors.matcher import FactorLibrary
 from app.guardrails.pii import redact_text
 from app.classify.rules import classify_by_rules
 from app.schemas import LineItem

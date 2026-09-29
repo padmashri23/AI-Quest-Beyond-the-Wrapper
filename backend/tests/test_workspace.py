@@ -9,22 +9,7 @@ from app.main import app
 from app.ledger import db
 from app.factors.matcher import library
 from app.calc.engine import calculate
-
-PASSWORD='test-only-long-password-42'
-
-@pytest.fixture
-def client():
-    with TestClient(app) as c:
-        assert c.post('/api/auth/setup',json={'username':'preparer','password':PASSWORD}).status_code==200
-        login=c.post('/api/auth/login',json={'username':'preparer','password':PASSWORD})
-        c.headers['x-csrf-token']=login.json()['csrf']
-        yield c
-
-def inventory(c,description='Natural gas',quantity='100',unit='therm',region='US',jurisdiction='SEC'):
-    csv=f'description,quantity,unit,region,period\n{description},{quantity},{unit},{region},FY2025\n'.encode()
-    response=c.post('/api/runs',data={'org_name':'Test Manufacturing','jurisdiction':jurisdiction},files=[('files',('activity.csv',csv,'text/csv'))])
-    assert response.status_code==200,response.text
-    return response.json()
+from helpers import PASSWORD, inventory
 
 def test_auth_roles_csrf_and_no_deletion(client):
     with TestClient(app) as anon:
@@ -92,7 +77,7 @@ def test_market_scope2_coverage_and_overallocation(client):
     assert client.post(base+'/instruments',json={**body,'serial_number':'another'}).status_code==422
 
 def test_ledger_encryption_append_only_and_missing_record_detection(client):
-    r=inventory(client)
+    inventory(client)
     with db._conn() as conn:
         row=conn.execute('SELECT body FROM revisions').fetchone()[0]
         assert row.startswith('enc:v1:') and 'Test Manufacturing' not in row

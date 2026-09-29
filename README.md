@@ -1,5 +1,7 @@
 # Carbon Copilot — evidence-led carbon accounting
 
+[![CI](https://github.com/padmashri23/AI-Quest-Beyond-the-Wrapper/actions/workflows/ci.yml/badge.svg)](https://github.com/padmashri23/AI-Quest-Beyond-the-Wrapper/actions/workflows/ci.yml)
+
 A single-workspace ESG accounting and disclosure-preparation application. Import activity evidence, classify Scope 1/2/3, calculate with Decimal tools, resolve review findings and export an independently approved evidence package.
 
 **This is not a certified filing system.** It does not submit to EDGAR, provide assurance, establish legal applicability, or cover every CSRD/ESRS or CSDDD requirement. See [deployment and release gates](docs/DEPLOYMENT.md).
@@ -18,7 +20,7 @@ cd backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-If the virtual environment does not exist, create it first with `python -m venv backend/.venv`. On macOS/Linux use `backend/.venv/bin/python`.
+If the virtual environment does not exist, create it first with `python -m venv backend/.venv`. On macOS/Linux use `backend/.venv/bin/python`. To run the tests and linters, install `backend/requirements-dev.txt` instead; it includes the runtime pins plus pytest, coverage, ruff and pip-audit.
 
 Open http://127.0.0.1:8000. Create the first administrator on the local setup screen, then import activities or choose **Explore sample inventory**. No default production password is provided.
 
@@ -84,18 +86,38 @@ The original 2023/2024 transcribed subsets remain available for historic reprodu
 
 ## Verification
 
+Run everything from the repository root with `backend/requirements-dev.txt` installed:
+
 ```powershell
-.\backend\.venv\Scripts\python.exe -m pytest backend/tests -q
-npm --prefix frontend run build
+.\backend\.venv\Scripts\python.exe -m ruff check .
+.\backend\.venv\Scripts\python.exe -m pytest --cov
+.\backend\.venv\Scripts\python.exe -m pip_audit -r backend/requirements.txt --progress-spinner off
+npm --prefix frontend run typecheck
 npm --prefix frontend run lint
+npm --prefix frontend run test:coverage
+npm --prefix frontend run build
 npm --prefix frontend audit --omit=dev --audit-level=high
 ```
 
-For the backend advisory check, install `pip-audit==2.10.1` in a development environment and run `python -m pip_audit -r backend/requirements.txt --progress-spinner off` with the backend virtual environment. The CI workflow repeats this check. A clean advisory scan is not a security certification or penetration test.
+`pyproject.toml` holds the pytest, coverage and ruff configuration; the coverage gate fails the backend run below 88% line coverage. `frontend/vite.config.ts` configures Vitest (jsdom, Testing Library) and its coverage thresholds; those are a floor just under today's whole-project coverage, because the compliance panels are exercised by browser QA rather than unit tests so far, and should be raised as panel tests are added. Use `npm --prefix frontend run test:watch` while developing.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every push to `main`, every pull request and on demand. Three jobs run: **backend** (ruff, pytest with the coverage gate, pip-audit), **frontend** (typecheck, oxlint, Vitest with coverage, Vite build, npm audit) and, once both pass, **docker** (builds the production image and polls `/api/health` in a running container). Coverage reports and the built dashboard are kept as workflow artifacts for 14 days. A green workflow is a regression check, not a security certification or penetration test.
+
+### Reproducible dependencies
+
+All dependency versions are pinned exactly. `backend/requirements.txt` holds the runtime pins that the Docker image installs; `backend/requirements-dev.txt` adds the pinned test, lint and audit tools. `frontend/package.json` lists exact versions that match `package-lock.json`, and `frontend/.npmrc` sets `save-exact` so newly added packages are pinned too. Upgrade deliberately, re-run the suite, and commit the lockfile change together with the pin.
+
+### What the tests cover
 
 Backend tests cover historical golden values, current official factors, finite-number refusals, full Excel sheet lineage, OCR success/failure handling, authentication/roles/CSRF, encrypted append-only records, missing-record tamper detection, migration, review conflicts, Scope 2 allocation, scenarios, supplier drafts and approval/export invalidation.
 
+Unit tests pin the smaller contracts underneath: unit aliases, dimension isolation and conversion constants; engine rounding, GWP selection and every refusal path; each classifier rule family, GL hints, spend rules and unit contradictions; the factor resolution chain (exact, year fallback, region fallback, GLOBAL, none) on a synthetic table; every greenwashing check in isolation; and each PII pattern. API tests exercise the public routes and security headers, the deterministic tool endpoints, first-run setup, login validation and lockout, session lifecycle, user administration, origin/CSRF gating, upload validation, default regions, lineage, report formats and draft-narrative preconditions.
+
 Additional tests exercise malformed/non-finite agent labels, duplicate-label refusal, supplier approval and stale-content rejection, secret-file configuration, private telemetry, tampered/older backup rejection and recovery without touching live data. Hosted Lyzr configuration and billed token costs are not established by offline tests.
+
+Frontend tests (Vitest, jsdom, Testing Library) cover the Zustand shell store (session bootstrap, inventory loading, stale-response protection, import, sample, reload and sign-out flows), the API clients and formatters, the ledger table, the overview, the login screen and the application shell against a mocked API.
 
 OCR tests mock the OCR engine output; they do not establish recognition accuracy across real supplier scans. Test databases/keys are isolated from the existing workspace. Browser QA has exercised desktop/mobile navigation and the major data-entry workflows using the real local API.
 
@@ -105,4 +127,6 @@ OCR tests mock the OCR engine output; they do not establish recognition accuracy
 - `backend/app/auth.py`, `security.py`, `ledger/db.py`: access controls, encryption and signed audit revisions.
 - `backend/app/regulations.py`: versioned legal reference profiles and disclosure section guidance.
 - `backend/scripts/sync_factors.py`: pinned-source factor import.
+- `frontend/src/store.ts`: Zustand store for the application shell (session, inventories, open run, navigation, request state); components subscribe to slices and call its actions.
 - `frontend/src/App.tsx`, `components/Overview.tsx`, `CompliancePanels.tsx`, `ReviewEditor.tsx`: responsive application and workflows.
+- `backend/tests/`, `frontend/src/test/`: pytest and Vitest suites; `pyproject.toml` and `frontend/vite.config.ts` hold their configuration and coverage gates.

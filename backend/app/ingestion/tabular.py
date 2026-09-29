@@ -101,7 +101,7 @@ def parse_tabular(filename: str, content: bytes) -> list[LineItem]:
     items: list[LineItem] = []
     for idx, row in df.iterrows():
         raw = {c: _str(row[c]) for c in df.columns}
-        get = lambda canon: raw.get(inv[canon]) if canon in inv else None  # noqa: E731
+        get = lambda canon, raw=raw: raw.get(inv[canon]) if canon in inv else None  # bind this row's values
 
         quantity = _dec(get("quantity"))
         unit = get("unit")

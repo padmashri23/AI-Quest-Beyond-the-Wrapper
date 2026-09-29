@@ -15,3 +15,12 @@ backend/data/official/*.xlsx
 backend/data/official/*.pdf
 frontend/test-results/
 frontend/playwright-report/
+
+# Test and lint output
+coverage/
+reports/
+.coverage
+.coverage.*
+coverage.xml
+.ruff_cache/
+frontend/coverage/

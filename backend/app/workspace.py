@@ -2,13 +2,11 @@
 from __future__ import annotations
 import hashlib
 import io
-import json
-import re
 import uuid
 import zipfile
 from decimal import Decimal
 from email.message import EmailMessage
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from .auth import require
@@ -22,7 +20,7 @@ from .ledger import db
 from .pipeline import Pipeline
 from .regulations import PROFILES, SECTIONS
 from .reports.render import figures_payload, template_narrative, render_markdown
-from .schemas import FactorMatch, FactorRow
+from .schemas import FactorMatch
 from .security import canonical, digest, sign
 
 router = APIRouter(prefix="/api", tags=["Compliance workspace"])
